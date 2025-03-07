@@ -18,7 +18,7 @@ class SecurityAnalysisChain:
         
         self.llm = ChatOpenAI(
             model_name=model_name,
-            openai_api_key=api_key,
+            api_key=api_key,
             base_url=base_url
         )
         

@@ -3,7 +3,7 @@ Description:
 version: 
 Author: Bao Jiaming
 Date: 2025-03-04 12:46:11
-LastEditTime: 2025-03-04 12:48:41
+LastEditTime: 2025-03-07 12:05:24
 FilePath: \security_agent\chains\time_parser_chain.py
 '''
 """
@@ -28,7 +28,7 @@ class TimeRangeParserChain:
         # 初始化LLM (使用通义千问API)
         self.llm = ChatOpenAI(
             model_name=model_name,
-            openai_api_key=api_key,
+            api_key=api_key,
             base_url=base_url
         )
         

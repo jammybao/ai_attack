@@ -3,7 +3,7 @@ Description:
 version: 
 Author: Bao Jiaming
 Date: 2025-03-04 12:47:05
-LastEditTime: 2025-03-04 12:51:28
+LastEditTime: 2025-03-07 12:06:39
 FilePath: \security_agent\chains\log_processor_chain.py
 '''
 """
@@ -26,7 +26,7 @@ class LogProcessorChain:
         
         self.llm = ChatOpenAI(
             model_name=model_name,
-            openai_api_key=api_key,
+            api_key=api_key,
             base_url=base_url
         )
         

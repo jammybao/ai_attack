@@ -1,17 +1,10 @@
-'''
-Description: 
-version: 
-Author: Bao Jiaming
-Date: 2025-03-04 12:46:37
-LastEditTime: 2025-03-06 20:45:36
-FilePath: \security_agent\chains\sql_generator_chain.py
-'''
 """
-SQL生成链
+SQL生成链 - 使用 LangChain 0.3
 """
-from langchain_openai import ChatOpenAI
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import ChatOpenAI
+from langchain_community.utilities.sql_database import SQLDatabase
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,48 +18,50 @@ class SQLGeneratorChain:
         
         self.llm = ChatOpenAI(
             model_name=model_name,
-            openai_api_key=api_key,
+            api_key=api_key,
             base_url=base_url
         )
         
         self.table_name = table_name
         
         # 定义SQL生成提示模板
-        self.sql_template = ChatPromptTemplate.from_template("""
-        你是一个SQL专家。请根据以下信息生成一个SQL查询语句，用于从安全日志表中检索指定时间范围内的数据。
+        self.sql_prompt = ChatPromptTemplate.from_template("""
+        你是一个SQL专家。请根据以下信息生成一个SQL查询：
         
-        表名: {table_name}
-        表结构: {table_schema}
-        时间范围: 起始时间 = {start_time}, 结束时间 = {end_time}
+        数据库表: {table_name}
+        时间范围: 从 {start_time} 到 {end_time}
         
-        生成的SQL应该：
-        1. 选择所有相关字段
-        2. 根据提供的时间范围过滤数据
-        3. 按时间戳降序排序
-        4. 限制返回最多10000条记录以避免性能问题
+        请生成一个SQL查询，查询该表中时间在指定范围内的所有记录，使用event_time字段作为时间字段，按event_time降序排序，限制返回10000条记录。
         
-        只返回SQL语句本身，不要有其他文本。
+        仅返回SQL查询语句，不要有其他解释。
         """)
         
-        # 创建解析器
-        self.output_parser = StrOutputParser()
-        
         # 构建链
-        self.chain = self.sql_template | self.llm | self.output_parser
-    
-    async def generate_sql(self, time_range, table_schema):
+        self.chain = self.sql_prompt | self.llm
+        
+    async def generate_sql(self, time_range, table_schema, db_connection):
         """生成SQL查询"""
         logger.info(f"生成SQL查询，时间范围: {time_range['start_time']} 到 {time_range['end_time']}")
         
         try:
-            response = await self.chain.ainvoke({
+            # 创建临时数据库连接
+            db = SQLDatabase.from_uri(db_connection)
+            
+            # 获取表结构信息
+            table_info = db.get_table_info([self.table_name])
+            
+            # 生成查询
+            sql_query = await self.chain.ainvoke({
                 "table_name": self.table_name,
-                "table_schema": table_schema,
                 "start_time": time_range["start_time"],
-                "end_time": time_range["end_time"]
+                "end_time": time_range["end_time"],
+                "table_info": table_info
             })
             
-            sql_query = response.strip()
+            # 提取内容
+            if hasattr(sql_query, 'content'):
+                sql_query = sql_query.content
+            
             logger.info(f"SQL查询生成成功: {sql_query}")
             return sql_query
         except Exception as e:
@@ -79,4 +74,4 @@ class SQLGeneratorChain:
             ORDER BY event_time DESC
             LIMIT 10000
             """
-            return default_sql.strip() 
+            return default_sql.strip()

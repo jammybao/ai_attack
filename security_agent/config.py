@@ -23,8 +23,12 @@ class Settings(BaseSettings):
     TONGYI_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"  # 默认值
     
     # 数据库配置
-    DB_CONNECTION_STRING: str = "sqlite:///./security_logs.db"  # 默认值
-    SECURITY_LOGS_TABLE: str = "security_logs"  # 默认值
+    # 旧的SQLite配置
+    # DB_CONNECTION_STRING: str = "sqlite:///./security_logs.db"  # 默认值
+    
+    # 新的MySQL配置
+    DB_CONNECTION_STRING: str = os.getenv("DB_CONNECTION_STRING", "mysql+pymysql://itm_wxp:itmWxp@.0402@174.35.74.68:23306/itm?useSSL=false")
+    SECURITY_LOGS_TABLE: str = os.getenv("SECURITY_LOGS_TABLE", "ids_ai")
     
     # 日志配置
     LOG_LEVEL: str = "INFO"  # 默认值
